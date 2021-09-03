@@ -4,82 +4,77 @@ import ImageGallery from './components/ImageGallery/ImageGallery';
 import Button from './components/Button/Button';
 import Modal from './components/Modal/Modal';
 import fetchImagesWithQuery from './api/imageApi'
-import { Component } from 'react';
 import Loader from "react-loader-spinner";
+import { useState } from 'react';
 
 
-class App extends Component {
-  state = {
-    images: [],
-    isLoading: false,
-    error: null,
-    searchQuery: '',
-    pageNumber: 1,
-    showModal: false,
-    modalImage: '',
-  };
+function App() {
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImage, setModalImage] = useState('');
 
-  searchImage = e => {
+  const searchImage = e => {
     e.preventDefault();
-    this.setState({ isLoading: true, searchQuery: e.target[1].value, pageNumber: 1});
+    setIsLoading(true);
+    setSearchQuery(e.target[1].value);
+    setPageNumber(1);
     fetchImagesWithQuery(e.target[1].value)
       .then(images => {
-        this.setState({images});
+        setImages(images);
       })
-      .catch(error => this.setState({ error }))
-      .finally(() => this.setState({ isLoading: false }));
+      .catch(error => setError(error))
+      .finally(() => setIsLoading(false));
     e.target.reset();
   }
 
-  loadMore = e => {
-    this.setState(prevState => ({ isLoading: true, pageNumber: prevState.pageNumber + 1 }));
-    fetchImagesWithQuery(this.state.searchQuery, this.state.pageNumber + 1)
+  const loadMore = e => {
+    setIsLoading(true);
+    setPageNumber(prevState => prevState + 1);
+    fetchImagesWithQuery(searchQuery, pageNumber + 1)
       .then(images => {
-        this.setState(prevState =>({images: [...prevState.images, ...images]}));
+        setImages(prevState => ([...prevState, ...images]));
       })
-      .catch(error => this.setState({ error }))
-      .finally(() => this.setState({ isLoading: false }));
+      .catch(error => setError(error))
+      .finally(() => setIsLoading(false));
     setTimeout(() => {
       window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
       });
-    }, 400); 
+    }, 400);
   }
 
-  showModal = e => {
-    this.setState(({ showModal, modalImage }) => ({
-      showModal: true,
-      modalImage: e.target.dataset.image,
-    }))
+  const openModal = e => {
+    setModalImage(e.target.dataset.image);
+    setShowModal(true);
   }
 
-  closeModal = e => {
-    this.setState(({ showModal, modalImage }) => ({
-      showModal: false,
-      modalImage: '',
-    }))
+  const closeModal = e => {
+    setShowModal(false);
+    setModalImage('');
   }
 
-  render() {
-    const {images, isLoading, showModal, modalImage} = this.state
-    return(
-      <div className="App">
-        <Searchbar onSubmit={this.searchImage} />
-        <ImageGallery onClick={this.showModal} images={images} />
-        {isLoading && <Loader
-          className="Loader"
-          type="Puff"
-          color="#3f51b5"
-          height={200}
-          width={200}
-        />}
-        {images[0] && <Button onClick={this.loadMore} />}
-        {showModal && <Modal image={modalImage} onClose={this.closeModal}/>}
-      </div>
-    );
-  }
-  
+
+
+  return (
+    <div className="App">
+      <Searchbar onSubmit={searchImage} />
+      <ImageGallery onClick={openModal} images={images} />
+      {isLoading && <Loader
+        className="Loader"
+        type="Puff"
+        color="#3f51b5"
+        height={200}
+        width={200}
+      />}
+      {images[0] && <Button onClick={loadMore} />}
+      {showModal && <Modal image={modalImage} onClose={closeModal} />}
+    </div>
+  );
 }
 
 export default App;
